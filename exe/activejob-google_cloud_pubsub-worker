@@ -1,43 +1,30 @@
 #!/usr/bin/env ruby
 
 require 'activejob-google_cloud_pubsub'
-require 'optparse/kwargs'
+require 'optparse'
 
 Version = ActiveJob::GoogleCloudPubsub::VERSION
 
 opts = {
   require: './config/environment'
 }
+worker_args = {}
 
 parser = OptionParser.new
-
 parser.on '--[no-]require=PATH' do |v|
   opts[:require] = v
 end
-
-worker_args = parser.define_by_keywords(
-  {},
-  ActiveJob::GoogleCloudPubsub::Worker.instance_method(:initialize),
-  {
-    min_threads: Integer,
-    max_threads: Integer
-  }
-)
-
-pubsub_args = parser.define_by_keywords(
-  {},
-  Google::Cloud::Pubsub.method(:new),
-  {
-    scope:   Array,
-    timeout: Integer
-  }
-)
-
+parser.on '--min_threads=N' do |v|
+  worker_args[:min_threads] = v
+end
+parser.on '--max_threads=N' do |v|
+  worker_args[:max_threads] = v
+end
 parser.parse ARGV
 
 require opts[:require] if opts[:require]
 
-pubsub = Google::Cloud::Pubsub.new(pubsub_args)
+pubsub = Google::Cloud::Pubsub.new
 
 begin
   ActiveJob::GoogleCloudPubsub::Worker.new(pubsub: pubsub, **worker_args).run
