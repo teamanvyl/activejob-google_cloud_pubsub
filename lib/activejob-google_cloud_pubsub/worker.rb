@@ -22,6 +22,7 @@ module ActiveJob
       end
 
       def run
+        @logger&.info "Initializing Pubsub worker pool with min_threads=[#{@min_threads}] and max_threads=[#{@max_threads}]"
         pool = Concurrent::ThreadPoolExecutor.new(min_threads: @min_threads, max_threads: @max_threads, max_queue: -1)
 
         @pubsub.subscription_for(@queue_name).listen do |message|
